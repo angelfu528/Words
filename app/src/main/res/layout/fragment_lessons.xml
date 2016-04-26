@@ -15,10 +15,18 @@
         android:layout_marginTop="-4dp"
         android:id="@+id/fragment_progressBar"
         android:visibility="invisible"/>
-
+    <FrameLayout
+        android:id="@+id/big_ad_container"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:padding="2dp" >
+    </FrameLayout>
     <com.dbychkov.words.widgets.RecyclerViewWithEmptyView
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/list"
+        android:layout_below="@id/big_ad_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:listSelector="@android:color/transparent"

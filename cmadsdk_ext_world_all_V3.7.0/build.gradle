@@ -1,0 +1,2 @@
+configurations.create("default")
+artifacts.add("default", file('cmadsdk_ext_world_all_V3.7.0.aar'))

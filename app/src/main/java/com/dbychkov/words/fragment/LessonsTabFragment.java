@@ -22,17 +22,23 @@ import android.support.v7.widget.GridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.BindString;
 import butterknife.ButterKnife;
+
+import com.cmcm.adsdk.nativead.NativeAdManager;
+import com.cmcm.baseapi.ads.INativeAd;
+import com.cmcm.baseapi.ads.INativeAdLoaderListener;
 import com.dbychkov.domain.Lesson;
 import com.dbychkov.words.R;
 import com.dbychkov.words.adapter.LessonsAdapter;
 import com.dbychkov.words.presentation.LessonsPresenter;
 import com.dbychkov.words.view.RenderLessonsView;
+import com.dbychkov.words.widgets.OrionNativeAdview;
 import com.dbychkov.words.widgets.RecyclerViewWithEmptyView;
 import jp.wasabeef.recyclerview.animators.FadeInAnimator;
 
@@ -45,6 +51,9 @@ public abstract class LessonsTabFragment extends BaseFragment implements RenderL
 
     public static final int SPAN_COUNT = 2;
     protected View inflatedView;
+    protected View mAdView;
+    @Bind(R.id.big_ad_container)
+    FrameLayout nativeAdContainer;
 
     @Bind(R.id.list)
     RecyclerViewWithEmptyView recyclerView;
@@ -106,6 +115,7 @@ public abstract class LessonsTabFragment extends BaseFragment implements RenderL
     public void renderLessonList(List<Lesson> lessonList) {
         getLessonsAdapter().disableAnimation();
         getLessonsAdapter().setItems(lessonList);
+
         recyclerView.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -113,6 +123,47 @@ public abstract class LessonsTabFragment extends BaseFragment implements RenderL
                 getLessonsAdapter().enableAnimation();
             }
         }, 350);
+
+        initNativeAd();
+    }
+
+    private void initNativeAd() {
+        final NativeAdManager nativeAdManager = new NativeAdManager(getActivity(), "1388100");
+        nativeAdManager.setNativeAdListener(new INativeAdLoaderListener() {
+            @Override
+            public void adLoaded() {
+                INativeAd ad = nativeAdManager.getAd();
+                Toast.makeText(getActivity(), "adLoaded", Toast.LENGTH_SHORT).show();
+                if (mAdView != null) {
+                    // 把旧的广告view从广告容器中移除
+                    nativeAdContainer.removeView(mAdView);
+                }
+                if (ad == null) {
+                    Toast.makeText(getActivity(),
+                            "no native ad loaded!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                //通过广告数据渲染广告View
+                mAdView = OrionNativeAdview.createAdView(getActivity(), ad);
+                nativeAdContainer.addView(mAdView);
+            }
+
+            @Override
+            public void adFailedToLoad(int i) {
+                Toast.makeText(getActivity(), "Ad failed to load errorCode:" + i,
+                        Toast.LENGTH_SHORT).show();
+            }
+
+
+            @Override
+            public void adClicked(INativeAd ad) {
+                Toast.makeText(getActivity(), "adClicked",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+        });
+
+        nativeAdManager.loadAd();
     }
 
     @Override

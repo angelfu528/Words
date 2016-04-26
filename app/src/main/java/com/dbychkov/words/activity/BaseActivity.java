@@ -24,19 +24,25 @@ import com.dbychkov.words.dagger.component.ActivityComponent;
 import com.dbychkov.words.dagger.component.ApplicationComponent;
 import com.dbychkov.words.dagger.component.DaggerActivityComponent;
 import com.dbychkov.words.dagger.module.ActivityModule;
+import com.dbychkov.words.util.KiipHelper;
+
+import me.kiip.sdk.Poptart;
 
 /**
  * Base activity for all the activities in the app
  */
-public abstract class BaseActivity extends AppCompatActivity {
+public abstract class BaseActivity extends AppCompatActivity implements KiipHelper.Listener {
 
     private ActivityComponent activityComponent;
+    private KiipHelper mKiipHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initActivityComponent();
         injectActivity(getActivityComponent());
+        mKiipHelper = new KiipHelper(this, this);
+        mKiipHelper.onCreate(this);
     }
 
     public ApplicationComponent getApplicationComponent() {
@@ -60,4 +66,45 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     public abstract void injectActivity(ActivityComponent component);
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mKiipHelper.onStart(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mKiipHelper.onStop(this);
+    }
+
+    public KiipHelper getKiipHelper() {
+        return mKiipHelper;
+    }
+
+    public void showPoptart(Poptart poptart) {
+        mKiipHelper.getKiipFragment().showPoptart(poptart);
+    }
+
+    public void showError(Exception exception) {
+        getKiipHelper().showAlert("Kiip Error", exception);
+    }
+
+    // Session Listeners from extending BaseFragmentActivity
+
+    @Override
+    public void onStartSession(KiipHelper kiipHelper, Poptart poptart, Exception e) {
+        if (poptart != null) {
+            showPoptart(poptart);
+        }
+        if (e != null) {
+            showError(e);
+        }
+    }
+
+    @Override
+    public void onEndSession(KiipHelper kiipHelper, Exception e) {
+        // no-op
+    }
 }

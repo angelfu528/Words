@@ -1,1 +1,1 @@
-include ':app', ':generator', ':data', ':domain'
+include ':app', ':generator', ':data', ':domain', ':cmadsdk_base_world_V3.3.0', ':cmadsdk_ext_world_all_V3.7.0', ':KiipSDK'

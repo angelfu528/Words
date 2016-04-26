@@ -24,14 +24,23 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
 import butterknife.*;
+import me.kiip.sdk.Kiip;
+import me.kiip.sdk.Modal;
+import me.kiip.sdk.Notification;
+import me.kiip.sdk.Poptart;
+
 import com.dbychkov.domain.Flashcard;
 import com.dbychkov.words.R;
 import com.dbychkov.words.adapter.CardPagerAdapter;
 import com.dbychkov.words.anim.ZoomOutPageTransformer;
+import com.dbychkov.words.app.App;
 import com.dbychkov.words.dagger.component.ActivityComponent;
 import com.dbychkov.words.fragment.CardContainerFragment;
 import com.dbychkov.words.presentation.StudyFlashcardsActivityPresenter;
@@ -44,7 +53,8 @@ import java.util.List;
 /**
  * Study session activity
  */
-public class StudyFlashcardsActivity extends BaseActivity implements StudyFlashcardsView {
+public class StudyFlashcardsActivity extends BaseActivity implements StudyFlashcardsView,
+        Modal.OnShowListener, Modal.OnDismissListener, DialogInterface.OnShowListener, Notification.OnShowListener, Notification.OnClickListener, Notification.OnDismissListener, DialogInterface.OnDismissListener {
 
     public static final String EXTRA_LESSON_ID = "lessonId";
 
@@ -106,6 +116,10 @@ public class StudyFlashcardsActivity extends BaseActivity implements StudyFlashc
         initToolbar();
         initButtons();
         initPresenter();
+
+        // Listen for poptart events
+        getKiipHelper().getKiipFragment().setOnShowListener(this);
+        getKiipHelper().getKiipFragment().setOnDismissListener(this);
     }
 
     private void initExtra() {
@@ -155,6 +169,35 @@ public class StudyFlashcardsActivity extends BaseActivity implements StudyFlashc
 
     @Override
     public void showLessonEndedDialog() {
+        try {
+            final String momentId = "hello_world";
+            Double momentValue = 10.0;
+            // Delegate to be called after Kiip#saveMoment is complete
+            Kiip.Callback cb = new Kiip.Callback() {
+                @Override
+                public void onFailed(Kiip kiip, Exception exception) {
+                    Log.e("tag", "Failed to save moment " + momentId, exception);
+
+                    showError(exception);
+                }
+
+                @Override
+                public void onFinished(Kiip kiip, Poptart poptart) {
+                    Log.d("tag", "Moment saved poptart=" + poptart);
+                    // WARNING: poptart may be null if no reward was given, but
+                    // KiipHelper#showPoptart checks for this
+                    showPoptart(poptart);
+                }
+            };
+
+            if (momentValue == null) {
+                Kiip.getInstance().saveMoment(momentId, cb);
+            } else {
+                Kiip.getInstance().saveMoment(momentId, momentValue.doubleValue(), cb);
+            }
+        } catch (NumberFormatException e) {
+            Toast.makeText(getBaseContext(), "Invalid moment_value", Toast.LENGTH_LONG).show();
+        }
         buildDialog(lessonEndedText, lessonEndedTitle);
     }
 
@@ -217,5 +260,56 @@ public class StudyFlashcardsActivity extends BaseActivity implements StudyFlashc
         viewPager.setCurrentItem(flashCardNumber);
     }
 
+    @Override
+    public void onDismiss(Modal modal) {
+        Log.d("tag", "Modal#onDismiss");
+    }
+
+    @Override
+    public void onShow(Modal modal) {
+        Log.d("tag", "Modal#onShow");
+    }
+
+    @Override
+    public void onShow(DialogInterface dialog) {
+        Log.d("tag", "Poptart#onShow");
+
+        final Poptart poptart = (Poptart)dialog;
+        final Notification notification = poptart.getNotification();
+        final Modal modal = poptart.getModal();
+
+        // Listen for notification events
+        if (notification != null) {
+            notification.setOnShowListener(this);
+            notification.setOnClickListener(this);
+            notification.setOnDismissListener(this);
+        }
+
+        // Listen for modal events
+        if (modal != null) {
+            modal.setOnShowListener(this);
+            modal.setOnDismissListener(this);
+        }
+    }
+
+    @Override
+    public void onShow(Notification notification) {
+        Log.d("tag", "Notification#onShow");
+    }
+
+    @Override
+    public void onClick(Notification notification) {
+        Log.d("tag", "Notification#onClick");
+    }
+
+    @Override
+    public void onDismiss(Notification notification) {
+        Log.d("tag", "Notification#onDismiss");
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        Log.d("tag", "Poptart#onDismiss");
+    }
 }
 
